@@ -300,7 +300,7 @@ export class ExchangeAPI {
     }
   }
 
-  async approveBuilderFee(builder: string, fee: number): Promise<any> {
+  async approveBuilderFee(builder: string, fee: string): Promise<any> {
     await this.parent.ensureInitialized();
     try {
       const action = {
