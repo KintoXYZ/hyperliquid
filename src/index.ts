@@ -83,7 +83,7 @@ export class Hyperliquid {
   private initializePrivateKey(privateKey: string, testnet: boolean, turnkeyAccount: Account | null = null): void {
     try {
       const formattedPrivateKey = (privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`) as Address;
-      if (!turnkeyAccount || formattedPrivateKey.length !== 66) {
+      if (!turnkeyAccount && formattedPrivateKey.length !== 66) {
         console.warn("Invalid private key provided. Some functionalities will be limited.");
         this.isValidPrivateKey = false;
         return;
