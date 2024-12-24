@@ -31,10 +31,13 @@ export enum InfoType {
     FUNDING_HISTORY = 'fundingHistory',
     SPOT_META = 'spotMeta',
     SPOT_CLEARINGHOUSE_STATE = 'spotClearinghouseState',
-    SPOT_META_AND_ASSET_CTXS = 'spotMetaAndAssetCtxs'
+    SPOT_META_AND_ASSET_CTXS = 'spotMetaAndAssetCtxs',
+    MAX_BUILDER_FEE = 'maxBuilderFee'
 }
 
 export enum ExchangeType {
+    APPROVE_AGENT = 'approveAgent',
+    APPROVE_BUILDER_FEE = 'approveBuilderFee',
     ORDER = 'order',
     CANCEL = 'cancel',
     CANCEL_BY_CLOID = 'cancelByCloid',

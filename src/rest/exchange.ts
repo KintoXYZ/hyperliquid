@@ -12,6 +12,7 @@ import {
   signUserSignedAction,
   signUsdTransferAction,
   signWithdrawFromBridgeAction,
+  signAgent,
 } from '../utils/signing';
 import * as CONSTANTS from '../types/constants';
 
@@ -297,6 +298,51 @@ export class ExchangeAPI {
     } catch (error) {
       throw error;
     }
+  }
+
+  async approveBuilderFee(builder: string, fee: number): Promise<any> {
+    await this.parent.ensureInitialized();
+    try {
+      const action = {
+        type: ExchangeType.APPROVE_BUILDER_FEE,
+        hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
+        signatureChainId: '0xa4b1',
+        maxFeeRate: fee,
+        builder,
+        nonce: Date.now()
+      };
+      const signature = await signUserSignedAction(
+        this.account,
+        action,
+        [
+          { name: 'hyperliquidChain', type: 'string' },
+          { name: 'maxFeeRate', type: 'string' },
+          { name: 'builder', type: 'string' },
+          { name: 'nonce', type: 'uint64' }
+        ],
+        'HyperliquidTransaction:ApproveBuilderFee', this.IS_MAINNET
+      );
+
+      const payload = { action, nonce: action.nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async approveAgent(agentAddress: string, agentName: string): Promise<any> {
+    await this.parent.ensureInitialized();
+    const action = {
+      type: ExchangeType.APPROVE_AGENT,
+      hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
+      agentAddress,
+      agentName,
+      nonce: Date.now()
+    };
+    const signature = await signAgent(this.account, action, this.IS_MAINNET);
+
+    const payload = { action, nonce: action.nonce, signature };
+    return this.httpApi.makeRequest(payload, 1);
   }
 
   //Withdraw USDC, this txn goes across the bridge and costs $1 in fees as of writing this

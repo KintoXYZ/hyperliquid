@@ -59,6 +59,11 @@ export class GeneralInfoAPI {
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 
+    async maxBuilderFee(user:string, builder: string, rawResponse: boolean = false): Promise<number> {
+        const response = await this.httpApi.makeRequest({ type: InfoType.MAX_BUILDER_FEE, user: user, builder: builder });
+        return rawResponse ? response : await this.symbolConversion.convertResponse(response);
+    }
+
     async getUserFillsByTime(user: string, startTime: number, endTime?: number, rawResponse: boolean = false): Promise<UserFills> {
         let params: { user: string; startTime: number; type: string; endTime?: number } = {
             user: user,

@@ -55,6 +55,10 @@ export class InfoAPI {
         return await this.symbolConversion.getAllAssets();
     }
 
+    async maxBuilderFee(user: string, builder: string, rawResponse: boolean = false): Promise<number> {
+        return await this.generalAPI.maxBuilderFee(user, builder, rawResponse);
+    }
+
     async getAllMids(rawResponse: boolean = false): Promise<AllMids> {
         return this.generalAPI.getAllMids(rawResponse);
     }
