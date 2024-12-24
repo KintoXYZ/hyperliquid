@@ -83,9 +83,15 @@ export class Hyperliquid {
   private initializePrivateKey(privateKey: string, testnet: boolean, turnkeyAccount: Account | null = null): void {
     try {
       const formattedPrivateKey = (privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`) as Address;
-      // Do in viem instead
-      privateKeyToAccount(formattedPrivateKey);
-      
+      if (!turnkeyAccount || formattedPrivateKey.length !== 66) {
+        console.warn("Invalid private key provided. Some functionalities will be limited.");
+        this.isValidPrivateKey = false;
+        return;
+      }
+      if (!turnkeyAccount) {
+        // try to see for real if it is valid
+        privateKeyToAccount(formattedPrivateKey);
+      }
       this.exchange = new ExchangeAPI(
         testnet, 
         formattedPrivateKey, 
@@ -105,7 +111,6 @@ export class Hyperliquid {
         this.walletAddress,
         turnkeyAccount
       );
-      
       this.isValidPrivateKey = true;
     } catch (error) {
       console.warn("Invalid private key provided. Some functionalities will be limited.");
