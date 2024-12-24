@@ -42,8 +42,8 @@ export class Hyperliquid {
     this.exchange = this.createAuthenticatedProxy(ExchangeAPI);
     this.custom = this.createAuthenticatedProxy(CustomOperations);
 
-    if (privateKey) {
-      this.initializePrivateKey(privateKey, testnet, turnkeyAccount);
+    if (privateKey || turnkeyAccount) {
+      this.initializePrivateKey(privateKey || "", testnet, turnkeyAccount);
     }
   }
 
