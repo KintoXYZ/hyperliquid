@@ -64,7 +64,9 @@ export class Hyperliquid {
       await this.symbolConversion.initialize();
       
       // Connect WebSocket
-      await this.ws.connect();
+      if (typeof window === 'undefined') {
+        await this.ws.connect();
+      }
       
       this._initialized = true;
       this._initializing = null;
