@@ -317,8 +317,7 @@ export class ExchangeAPI {
         [
           { name: 'hyperliquidChain', type: 'string' },
           { name: 'maxFeeRate', type: 'string' },
-          { name: 'builder', type: 'string' },
-          { name: 'nonce', type: 'uint64' }
+          { name: 'builder', type: 'string' }
         ],
         'HyperliquidTransaction:ApproveBuilderFee', this.IS_MAINNET
       );
