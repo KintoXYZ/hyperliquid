@@ -1,33 +1,37 @@
 // src/rest/custom.ts
 
-import { ethers } from 'ethers';
 import { InfoAPI } from './info';
+import { createWalletClient, Account, http, Address } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { arbitrum } from 'viem/chains';
 import { ExchangeAPI } from './exchange';
 import { UserOpenOrders } from '../types';
 import { OrderResponse, CancelOrderRequest, OrderRequest, OrderType } from '../types/index';
 import { CancelOrderResponse } from '../utils/signing'
 import { SymbolConversion } from '../utils/symbolConversion';
-import { floatToWire } from '../utils/signing';
 
 export class CustomOperations {
     private exchange: ExchangeAPI;
     private infoApi: InfoAPI;
-    private wallet: ethers.Wallet;
+    private account: Account;
     private symbolConversion: SymbolConversion;
-    private walletAddress: string | null;
+    private walletAddress: string;
 
-    constructor(exchange: ExchangeAPI, infoApi: InfoAPI, privateKey: string, symbolConversion: SymbolConversion, walletAddress: string | null = null) {
+    constructor(exchange: ExchangeAPI, infoApi: InfoAPI, privateKey: Address, symbolConversion: SymbolConversion, walletAddress: string | null = null, turnkeyAccount: Account | null = null) {
         this.exchange = exchange;
         this.infoApi = infoApi;
-        this.wallet = new ethers.Wallet(privateKey);
+        this.account = turnkeyAccount ? turnkeyAccount : createWalletClient({
+            account: privateKeyToAccount(privateKey),
+            chain: arbitrum,
+            transport: http(),
+        }).account;
         this.symbolConversion = symbolConversion;
-        this.walletAddress = walletAddress;
+        this.walletAddress = (walletAddress || this.account?.address || "") as `0x${string}`;
     }
 
     async cancelAllOrders(symbol?: string): Promise<CancelOrderResponse> {
         try {
-            const address = this.walletAddress || this.wallet.address;
-            const openOrders: UserOpenOrders = await this.infoApi.getUserOpenOrders(address);
+            const openOrders: UserOpenOrders = await this.infoApi.getUserOpenOrders(this.walletAddress);
 
             let ordersToCancel: UserOpenOrders;
             
@@ -122,8 +126,7 @@ export class CustomOperations {
         cloid?: string
     ): Promise<OrderResponse> {
         const convertedSymbol = await this.symbolConversion.convertSymbol(symbol);
-        const address = this.walletAddress || this.wallet.address;
-        const positions = await this.infoApi.perpetuals.getClearinghouseState(address);
+        const positions = await this.infoApi.perpetuals.getClearinghouseState(this.walletAddress);
         for (const position of positions.assetPositions) {
             const item = position.position;
             if (convertedSymbol !== item.coin) {
@@ -158,8 +161,7 @@ export class CustomOperations {
 
     async closeAllPositions(slippage: number = this.DEFAULT_SLIPPAGE): Promise<OrderResponse[]> {
         try {
-            const address = this.walletAddress || this.wallet.address;
-            const positions = await this.infoApi.perpetuals.getClearinghouseState(address);
+            const positions = await this.infoApi.perpetuals.getClearinghouseState(this.walletAddress);
             const closeOrders: Promise<OrderResponse>[] = [];
 
             console.log(positions)

@@ -1,10 +1,13 @@
 {
-  "name": "hyperliquid",
-  "version": "1.4.1",
+  "name": "kinto-hyperliquid",
+  "version": "1.0.0",
   "description": "SDK for Hyperliquid API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["src", "dist"],
+  "files": [
+    "src",
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
@@ -25,14 +28,14 @@
     "arbitrum",
     "dex"
   ],
-  "author": "Nomeida",
+  "author": "Ramon Recuero",
   "license": "MIT",
   "dependencies": {
     "@msgpack/msgpack": "^3.0.0-beta2",
     "@types/ws": "^8.5.11",
     "axios": "^1.7.2",
-    "ethers": "^6.13.2",
     "typescript": "^5.5.4",
+    "viem": "^2.21.57",
     "ws": "^8.18.0"
   },
   "devDependencies": {
@@ -46,7 +49,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nomeida/hyperliquid-api"
+    "url": "https://github.com/kintoxyz/hyperliquid"
   },
   "engines": {
     "node": ">=16.0.0"

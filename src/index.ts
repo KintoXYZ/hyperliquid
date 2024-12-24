@@ -5,11 +5,10 @@ import { WebSocketSubscriptions } from './websocket/subscriptions';
 import { RateLimiter } from './utils/rateLimiter';
 import * as CONSTANTS from './types/constants';
 import { CustomOperations } from './rest/custom';
-import { ethers } from 'ethers';
+import { privateKeyToAccount } from 'viem/accounts';
 import { SymbolConversion } from './utils/symbolConversion';
 import { AuthenticationError } from './utils/errors';
-
-
+import { Address, Account } from 'viem';
 
 export class Hyperliquid {
   public info: InfoAPI;
@@ -24,10 +23,8 @@ export class Hyperliquid {
   private walletAddress: string | null = null;
   private _initialized: boolean = false;
   private _initializing: Promise<void> | null = null;
-  private _privateKey?: string;
-  private _walletAddress?: string;
 
-  constructor(privateKey?: string, testnet: boolean = false, walletAddress?: string) {
+  constructor(privateKey?: string, testnet: boolean = false, walletAddress?: string, turnkeyAccount?: Account | null) {
     const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
 
     this.rateLimiter = new RateLimiter();
@@ -46,9 +43,7 @@ export class Hyperliquid {
     this.custom = this.createAuthenticatedProxy(CustomOperations);
 
     if (privateKey) {
-      this._privateKey = privateKey;
-      this._walletAddress = walletAddress;
-      this.initializePrivateKey(privateKey, testnet);
+      this.initializePrivateKey(privateKey, testnet, turnkeyAccount);
     }
   }
 
@@ -83,10 +78,11 @@ export class Hyperliquid {
     await this.connect();
   }
 
-  private initializePrivateKey(privateKey: string, testnet: boolean): void {
+  private initializePrivateKey(privateKey: string, testnet: boolean, turnkeyAccount: Account | null = null): void {
     try {
-      const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
-      new ethers.Wallet(formattedPrivateKey); // Validate the private key
+      const formattedPrivateKey = (privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`) as Address;
+      // Do in viem instead
+      privateKeyToAccount(formattedPrivateKey);
       
       this.exchange = new ExchangeAPI(
         testnet, 
@@ -95,7 +91,8 @@ export class Hyperliquid {
         this.rateLimiter, 
         this.symbolConversion, 
         this.walletAddress,
-        this
+        this,
+        turnkeyAccount
       );
       
       this.custom = new CustomOperations(
@@ -103,7 +100,8 @@ export class Hyperliquid {
         this.info, 
         formattedPrivateKey, 
         this.symbolConversion, 
-        this.walletAddress
+        this.walletAddress,
+        turnkeyAccount
       );
       
       this.isValidPrivateKey = true;
@@ -124,39 +122,17 @@ export class Hyperliquid {
     });
   }
 
-  private initializeWithPrivateKey(privateKey: string, testnet: boolean = false): void {
-    try {
-      const formattedPrivateKey = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}` as `0x${string}`;
-      new ethers.Wallet(formattedPrivateKey); // Validate the private key
-      
-      this.exchange = new ExchangeAPI(
-          testnet, 
-          formattedPrivateKey, 
-          this.info, 
-          this.rateLimiter, 
-          this.symbolConversion, 
-          this.walletAddress,
-          this
-      );
-      this.custom = new CustomOperations(this.exchange, this.info, formattedPrivateKey, this.symbolConversion, this.walletAddress);
-      this.isValidPrivateKey = true;
-    } catch (error) {
-      console.warn("Invalid private key provided. Some functionalities will be limited.");
-      this.isValidPrivateKey = false;
-    }
-  }
-
   // Modify existing methods to check initialization
   public isAuthenticated(): boolean {
     this.ensureInitialized();
     return this.isValidPrivateKey;
-}
+  }
 
 
-disconnect(): void {
+  disconnect(): void {
     this.ensureInitialized();
     this.ws.close();
-}
+  }
 
 }
 

@@ -1,7 +1,9 @@
-import { ethers } from 'ethers';
 import { RateLimiter } from '../utils/rateLimiter';
 import { HttpApi } from '../utils/helpers';
 import { InfoAPI } from './info';
+import { createWalletClient, http, Address, Account } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { arbitrum } from 'viem/chains';
 import {
   signL1Action,
   orderToWire,
@@ -23,36 +25,40 @@ import {
 
 import { ExchangeType, ENDPOINTS } from '../types/constants';
 import { SymbolConversion } from '../utils/symbolConversion';
-import { floatToWire } from '../utils/signing';
 import { Hyperliquid } from '../index';
 
 
 // const IS_MAINNET = true; // Make sure this matches the IS_MAINNET in signing.ts
 
 export class ExchangeAPI {
-  private wallet: ethers.Wallet;
+  private account: Account;
   private httpApi: HttpApi;
   private symbolConversion: SymbolConversion;
   private IS_MAINNET = true;
-  private walletAddress: string | null;
+  private walletAddress: string;
   private _i = 0;
   private parent: Hyperliquid;
 
   constructor(
     testnet: boolean,
-    privateKey: string,
+    privateKey: Address,
     private info: InfoAPI,
     rateLimiter: RateLimiter,
     symbolConversion: SymbolConversion,
     walletAddress: string | null = null,
-    parent: Hyperliquid
+    parent: Hyperliquid,
+    turnkeyAccount: Account | null = null
   ) {
     const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
     this.IS_MAINNET = !testnet;
     this.httpApi = new HttpApi(baseURL, ENDPOINTS.EXCHANGE, rateLimiter);
-    this.wallet = new ethers.Wallet(privateKey);
+    this.account = turnkeyAccount ? turnkeyAccount : createWalletClient({
+      account: privateKeyToAccount(privateKey),
+      chain: arbitrum,
+      transport: http(),
+    }).account;
     this.symbolConversion = symbolConversion;
-    this.walletAddress = walletAddress;
+    this.walletAddress = (walletAddress || this.account?.address || "") as `0x${string}`;
     this.parent = parent;
   }
 
@@ -90,7 +96,7 @@ export class ExchangeAPI {
       const actions = orderWireToAction(orderWires, grouping, builder);
 
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, actions, vaultAddress, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.account, actions, vaultAddress as Address | null, nonce, this.IS_MAINNET);
 
       const payload = { action: actions, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
@@ -117,7 +123,7 @@ export class ExchangeAPI {
       };
 
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.account, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
       return this.httpApi.makeRequest(payload, 1);
@@ -136,7 +142,7 @@ export class ExchangeAPI {
         cancels: [{ asset: assetIndex, cloid }]
       };
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.account, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
       return this.httpApi.makeRequest(payload, 1);
@@ -158,7 +164,7 @@ export class ExchangeAPI {
         order: orderWire
       };
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.account, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
       return this.httpApi.makeRequest(payload, 1);
@@ -188,7 +194,7 @@ export class ExchangeAPI {
       };
 
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.account, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
       return this.httpApi.makeRequest(payload, 1);
@@ -209,7 +215,7 @@ export class ExchangeAPI {
         leverage: leverage
       };
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.account, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
       return this.httpApi.makeRequest(payload, 1);
@@ -230,7 +236,7 @@ export class ExchangeAPI {
         ntli
       };
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.account, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
       return this.httpApi.makeRequest(payload, 1);
@@ -251,10 +257,10 @@ export class ExchangeAPI {
         amount: amount.toString(),
         time: Date.now()
       };
-      const signature = await signUsdTransferAction(this.wallet, action, this.IS_MAINNET);
+      const signature = await signUsdTransferAction(this.account, action, this.IS_MAINNET);
 
       const payload = { action, nonce: action.time, signature };
-      return this.httpApi.makeRequest(payload, 1, this.walletAddress || this.wallet.address);
+      return this.httpApi.makeRequest(payload, 1, this.walletAddress);
     } catch (error) {
       throw error;
     }
@@ -274,7 +280,7 @@ export class ExchangeAPI {
         time: Date.now()
       };
       const signature = await signUserSignedAction(
-        this.wallet,
+        this.account,
         action,
         [
           { name: 'hyperliquidChain', type: 'string' },
@@ -305,7 +311,7 @@ export class ExchangeAPI {
         amount: amount.toString(),
         time: Date.now()
       };
-      const signature = await signWithdrawFromBridgeAction(this.wallet, action, this.IS_MAINNET);
+      const signature = await signWithdrawFromBridgeAction(this.account, action, this.IS_MAINNET);
 
       const payload = { action, nonce: action.time, signature };
       return this.httpApi.makeRequest(payload, 1);
@@ -326,7 +332,7 @@ export class ExchangeAPI {
         }
       };
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.account, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
       return this.httpApi.makeRequest(payload, 1);
@@ -341,7 +347,7 @@ export class ExchangeAPI {
     try {
       const action = { type: ExchangeType.SCHEDULE_CANCEL, time };
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.account, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
       return this.httpApi.makeRequest(payload, 1);
@@ -361,7 +367,7 @@ export class ExchangeAPI {
         usd
       };
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.account, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
       return this.httpApi.makeRequest(payload, 1);
@@ -378,7 +384,7 @@ export class ExchangeAPI {
         code
       };
       const nonce = Date.now();
-      const signature = await signL1Action(this.wallet, action, null, nonce, this.IS_MAINNET);
+      const signature = await signL1Action(this.account, action, null, nonce, this.IS_MAINNET);
 
       const payload = { action, nonce, signature };
       return this.httpApi.makeRequest(payload, 1);

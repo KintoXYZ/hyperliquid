@@ -1,7 +1,8 @@
 import { encode } from '@msgpack/msgpack';
-import { ethers, getBytes, HDNodeWallet, keccak256, type Wallet } from 'ethers';
+import { hexToBytes, keccak256, type WalletClient, type Account } from 'viem';
 
-import type { Builder, Order, OrderRequest, OrderType, OrderWire, Signature, CancelOrderRequest, Grouping } from '../types';
+import type { Builder, Order, OrderType, OrderWire, Signature, CancelOrderRequest, Grouping } from '../types';
+import { Address } from 'viem';
 
 const phantomDomain = {
     name: 'Exchange',
@@ -32,11 +33,11 @@ export function orderTypeToWire(orderType: OrderType): OrderType {
     throw new Error('Invalid order type');
 }
 
-function addressToBytes(address: string): Uint8Array {
-    return getBytes(address);
+function addressToBytes(address: Address): Uint8Array {
+    return hexToBytes(address);
 }
 
-function actionHash(action: unknown, vaultAddress: string | null, nonce: number): string {
+function actionHash(action: unknown, vaultAddress: Address | null, nonce: number): string {
     const msgPackBytes = encode(action);
     const additionalBytesLength = vaultAddress === null ? 9 : 29;
     const data = new Uint8Array(msgPackBytes.length + additionalBytesLength);
@@ -57,9 +58,9 @@ function constructPhantomAgent(hash: string, isMainnet: boolean) {
 }
 
 export async function signL1Action(
-    wallet: Wallet | HDNodeWallet,
+    wallet: Account,
     action: unknown,
-    activePool: string | null,
+    activePool: Address | null,
     nonce: number,
     isMainnet: boolean,
 ): Promise<Signature> {
@@ -75,7 +76,7 @@ export async function signL1Action(
 }
 
 export async function signUserSignedAction(
-    wallet: Wallet,
+    account: Account,
     action: any,
     payloadTypes: Array<{ name: string; type: string }>,
     primaryType: string,
@@ -96,12 +97,12 @@ export async function signUserSignedAction(
         primaryType: primaryType,
         message: action,
     };
-    return signInner(wallet, data);
+    return signInner(account, data);
 }
 
-export async function signUsdTransferAction(wallet: Wallet, action: any, isMainnet: boolean): Promise<Signature> {
+export async function signUsdTransferAction(account: Account, action: any, isMainnet: boolean): Promise<Signature> {
     return signUserSignedAction(
-        wallet,
+        account,
         action,
         [
             { name: 'hyperliquidChain', type: 'string' },
@@ -114,9 +115,9 @@ export async function signUsdTransferAction(wallet: Wallet, action: any, isMainn
     );
 }
 
-export async function signWithdrawFromBridgeAction(wallet: Wallet, action: any, isMainnet: boolean): Promise<Signature> {
+export async function signWithdrawFromBridgeAction(account: Account, action: any, isMainnet: boolean): Promise<Signature> {
     return signUserSignedAction(
-        wallet,
+        account,
         action,
         [
             { name: 'hyperliquidChain', type: 'string' },
@@ -129,9 +130,9 @@ export async function signWithdrawFromBridgeAction(wallet: Wallet, action: any, 
     );
 }
 
-export async function signAgent(wallet: Wallet, action: any, isMainnet: boolean): Promise<Signature> {
+export async function signAgent(account: Account, action: any, isMainnet: boolean): Promise<Signature> {
     return signUserSignedAction(
-        wallet,
+        account,
         action,
         [
             { name: 'hyperliquidChain', type: 'string' },
@@ -144,13 +145,23 @@ export async function signAgent(wallet: Wallet, action: any, isMainnet: boolean)
     );
 }
 
-async function signInner(wallet: Wallet | HDNodeWallet, data: any): Promise<Signature> {
-    const signature = await wallet.signTypedData(data.domain, data.types, data.message);
+async function signInner(account: Account, data: any): Promise<Signature> {
+    if (!account.signTypedData) {
+        throw new Error('Account does not support signTypedData');
+    }
+    const signature = await account.signTypedData({
+        domain: data.domain,
+        types: data.types,
+        primaryType: data.primaryType,
+        message: data.message,
+    });
     return splitSig(signature);
 }
 
 function splitSig(sig: string): Signature {
-    const { r, s, v } = ethers.Signature.from(sig);
+    const r = `0x${sig.slice(2, 66)}`;
+    const s = `0x${sig.slice(66, 130)}`;
+    const v = parseInt(sig.slice(130, 132), 16);
     return { r, s, v };
 }
 
