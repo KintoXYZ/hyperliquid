@@ -311,13 +311,15 @@ export class ExchangeAPI {
         builder,
         nonce: Date.now()
       };
+
       const signature = await signUserSignedAction(
         this.account,
         action,
         [
           { name: 'hyperliquidChain', type: 'string' },
           { name: 'maxFeeRate', type: 'string' },
-          { name: 'builder', type: 'string' }
+          { name: 'builder', type: 'address' },
+          { name: "nonce", type: "uint64"},
         ],
         'HyperliquidTransaction:ApproveBuilderFee', this.IS_MAINNET
       );
