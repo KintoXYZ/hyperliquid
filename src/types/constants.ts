@@ -32,7 +32,8 @@ export enum InfoType {
     SPOT_META = 'spotMeta',
     SPOT_CLEARINGHOUSE_STATE = 'spotClearinghouseState',
     SPOT_META_AND_ASSET_CTXS = 'spotMetaAndAssetCtxs',
-    MAX_BUILDER_FEE = 'maxBuilderFee'
+    MAX_BUILDER_FEE = 'maxBuilderFee',
+    EXTRA_AGENTS = 'extraAgents'
 }
 
 export enum ExchangeType {
