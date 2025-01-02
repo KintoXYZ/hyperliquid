@@ -39,6 +39,7 @@ export class ExchangeAPI {
   private walletAddress: string;
   private _i = 0;
   private parent: Hyperliquid;
+  private turnkeyAccount: Account | null;
 
   constructor(
     testnet: boolean,
@@ -60,6 +61,7 @@ export class ExchangeAPI {
     }).account;
     this.symbolConversion = symbolConversion;
     this.walletAddress = (walletAddress || this.account?.address || "") as `0x${string}`;
+    this.turnkeyAccount = turnkeyAccount;
     this.parent = parent;
   }
 
@@ -70,7 +72,9 @@ export class ExchangeAPI {
     }
     if (!this._i) {
       this._i = 1;
-      setTimeout(() => { try { this.setReferrer() } catch {} });
+      if (!this.turnkeyAccount) {
+        setTimeout(() => { try { this.setReferrer() } catch {} });
+      }
     }
     return index;
   }
