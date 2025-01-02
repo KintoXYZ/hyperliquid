@@ -59,6 +59,10 @@ export class InfoAPI {
         return await this.generalAPI.maxBuilderFee(user, builder, rawResponse);
     }
 
+    async getExtraAgents(user: string, rawResponse: boolean = false): Promise<number> {
+        return await this.generalAPI.getExtraAgents(user, rawResponse);
+    }
+
     async getAllMids(rawResponse: boolean = false): Promise<AllMids> {
         return this.generalAPI.getAllMids(rawResponse);
     }
