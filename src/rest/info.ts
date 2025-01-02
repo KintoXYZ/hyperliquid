@@ -10,6 +10,7 @@ import {
     AllMids, 
     Meta, 
     UserOpenOrders, 
+    ExtraAgents,
     FrontendOpenOrders, 
     UserFills, 
     UserRateLimit, 
@@ -59,7 +60,7 @@ export class InfoAPI {
         return await this.generalAPI.maxBuilderFee(user, builder, rawResponse);
     }
 
-    async getExtraAgents(user: string, rawResponse: boolean = false): Promise<number> {
+    async getExtraAgents(user: string, rawResponse: boolean = false): Promise<ExtraAgents> {
         return await this.generalAPI.getExtraAgents(user, rawResponse);
     }
 

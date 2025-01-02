@@ -39,6 +39,12 @@ export interface AllMids {
     [coin: string]: string;
 }
 
+export interface ExtraAgents {
+    address: string;
+    name: string;
+    validUntil: number;
+}[]
+
 export interface Meta {
     universe: {
     name: string;

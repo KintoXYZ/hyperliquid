@@ -7,6 +7,7 @@ import {
     FrontendOpenOrders, 
     UserFills, 
     UserRateLimit, 
+    ExtraAgents,
     OrderStatus, 
     L2Book, 
     CandleSnapshot 
@@ -64,7 +65,7 @@ export class GeneralInfoAPI {
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 
-    async getExtraAgents(user:string, rawResponse: boolean = false): Promise<number> {
+    async getExtraAgents(user:string, rawResponse: boolean = false): Promise<ExtraAgents> {
         const response = await this.httpApi.makeRequest({ type: InfoType.EXTRA_AGENTS, user: user });
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
