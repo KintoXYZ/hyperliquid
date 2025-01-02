@@ -13,8 +13,8 @@ import { Address, Account } from 'viem';
 export class Hyperliquid {
   public info: InfoAPI;
   public exchange: ExchangeAPI;
-  public ws: WebSocketClient;
-  public subscriptions: WebSocketSubscriptions;
+  public ws: WebSocketClient | undefined;
+  public subscriptions: WebSocketSubscriptions | undefined;
   public custom: CustomOperations;
 
   private rateLimiter: RateLimiter;
@@ -23,20 +23,23 @@ export class Hyperliquid {
   private walletAddress: string | null = null;
   private _initialized: boolean = false;
   private _initializing: Promise<void> | null = null;
-
-  constructor(privateKey?: string, testnet: boolean = false, walletAddress?: string, turnkeyAccount?: Account | null) {
+  private disableSymbolConversion: boolean = false;
+  constructor(privateKey?: string, testnet: boolean = false, walletAddress?: string, turnkeyAccount?: Account | null, disablews: boolean = false, disableSymbolConversion: boolean = false) {
     const baseURL = testnet ? CONSTANTS.BASE_URLS.TESTNET : CONSTANTS.BASE_URLS.PRODUCTION;
 
     this.rateLimiter = new RateLimiter();
     this.symbolConversion = new SymbolConversion(baseURL, this.rateLimiter);
     this.walletAddress = walletAddress || null;
+    this.disableSymbolConversion = disableSymbolConversion;
 
     // Initialize info API
     this.info = new InfoAPI(baseURL, this.rateLimiter, this.symbolConversion, this);
     
     // Initialize WebSocket
-    this.ws = new WebSocketClient(testnet);
-    this.subscriptions = new WebSocketSubscriptions(this.ws, this.symbolConversion);
+    if (!disablews) {
+      this.ws = new WebSocketClient(testnet);
+      this.subscriptions = new WebSocketSubscriptions(this.ws, this.symbolConversion);
+    }
     
     // Create proxy objects for exchange and custom
     this.exchange = this.createAuthenticatedProxy(ExchangeAPI);
@@ -60,11 +63,13 @@ export class Hyperliquid {
     if (this._initialized) return;
     
     try {
-      // Initialize symbol conversion first
-      await this.symbolConversion.initialize();
+      if (!this.disableSymbolConversion) {
+        // Initialize symbol conversion first
+        await this.symbolConversion.initialize();
+      }
       
       // Connect WebSocket
-      if (typeof window === 'undefined') {
+      if (this.ws && typeof window === 'undefined') {
         await this.ws.connect();
       }
       
@@ -138,7 +143,9 @@ export class Hyperliquid {
 
   disconnect(): void {
     this.ensureInitialized();
-    this.ws.close();
+    if (this.ws) {
+      this.ws.close();
+    }
   }
 
 }
