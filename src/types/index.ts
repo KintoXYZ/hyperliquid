@@ -106,6 +106,8 @@ export interface UserFills {
     px: string;
     side: string;
     startPosition: string;
+    fee: string;
+    builderFee: string;
     sz: string;
     time: number;
 }[]
