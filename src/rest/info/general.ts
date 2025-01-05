@@ -56,7 +56,7 @@ export class GeneralInfoAPI {
     }
 
     async getUserFills(user: string, rawResponse: boolean = false): Promise<UserFills> {
-        const response = await this.httpApi.makeRequest({ type: InfoType.USER_FILLS, user: user }, 20);
+        const response = await this.httpApi.makeRequest({ type: InfoType.USER_FILLS, user: user, aggregateByTime: true }, 20);
         return rawResponse ? response : await this.symbolConversion.convertResponse(response);
     }
 

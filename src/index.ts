@@ -96,6 +96,8 @@ export class Hyperliquid {
       if (!turnkeyAccount) {
         // try to see for real if it is valid
         privateKeyToAccount(formattedPrivateKey);
+      } else {
+        this.isValidPrivateKey = true;
       }
       this.exchange = new ExchangeAPI(
         testnet, 
