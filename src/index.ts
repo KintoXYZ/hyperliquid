@@ -40,6 +40,10 @@ export class Hyperliquid {
       this.ws = new WebSocketClient(testnet);
       this.subscriptions = new WebSocketSubscriptions(this.ws, this.symbolConversion);
     }
+
+    if (turnkeyAccount) {
+      this.isValidPrivateKey = true;
+    }
     
     // Create proxy objects for exchange and custom
     this.exchange = this.createAuthenticatedProxy(ExchangeAPI);
